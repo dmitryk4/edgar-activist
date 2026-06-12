@@ -291,10 +291,10 @@
       </div>
       <div class="top-row">
         <div class="filters">
-          <button class="filter-btn activist active" data-filter="13d"  onclick="setFilter('13d')">13D — Activists</button>
+          <button class="filter-btn activist"    data-filter="13d"  onclick="setFilter('13d')">13D — Activists</button>
           <button class="filter-btn"          data-filter="13g"  onclick="setFilter('13g')">13G — Passive</button>
           <button class="filter-btn"          data-filter="13f"  onclick="setFilter('13f')">13F — Institutional</button>
-          <button class="filter-btn"          data-filter="all"  onclick="setFilter('all')">All</button>
+          <button class="filter-btn active"   data-filter="all"  onclick="setFilter('all')">All</button>
         </div>
         <a id="dlBtn" class="dl-btn" href="#">⬇ Download Excel</a>
       </div>
@@ -333,7 +333,7 @@
   const titleEl    = document.getElementById('resultsTitle');
   const dlBtn      = document.getElementById('dlBtn');
 
-  let currentFilter = '13d';
+  let currentFilter = 'all';
   let allRows = [];
   let currentJobId = null;
 
