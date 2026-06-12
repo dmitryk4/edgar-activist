@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activist Ownership Research</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    nav {
+      width: 100%;
+      background: #1e293b;
+      display: flex;
+      gap: 4px;
+      padding: 0 24px;
+      margin-bottom: 36px;
+    }
+    .nav-link {
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 14px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .nav-link:hover  { color: #fff; }
+    .nav-link.active { color: #fff; border-bottom-color: #3b82f6; }
+    .nav-link.soon   { color: #64748b; font-style: italic; }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
+    }
+
+    header { text-align: center; margin-bottom: 28px; }
+    header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { color: #64748b; margin-top: 6px; font-size: 0.95rem; }
+
+    /* Input card */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .input-row { display: flex; gap: 10px; }
+
+    #ticker {
+      flex: 1;
+      padding: 13px 18px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 2px solid #e2e8f0;
+      border-radius: 9px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #ticker:focus { border-color: #3b82f6; }
+    #ticker::placeholder { font-weight: 400; letter-spacing: normal; color: #94a3b8; }
+
+    #scrapeBtn {
+      padding: 13px 26px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    #scrapeBtn:hover:not(:disabled) { background: #1d4ed8; }
+    #scrapeBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .hint { font-size: 0.82rem; color: #94a3b8; margin-top: 12px; }
+
+    /* Log */
+    #logWrap { display: none; margin-top: 20px; }
+    #logLabel { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    #log {
+      background: #0f172a;
+      color: #7dd3fc;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      border-radius: 9px;
+      padding: 14px 16px;
+      height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    #log .err  { color: #f87171; }
+    #log .sep  { color: #38bdf8; }
+    #log .done { color: #4ade80; font-weight: bold; }
+
+    /* Error */
+    #errorBox {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      color: #991b1b;
+      font-size: 0.9rem;
+    }
+
+    /* Results section */
+    #resultsSection { display: none; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .results-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; }
+    .results-count { font-size: 0.85rem; color: #64748b; }
+
+    .top-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* Filter tabs */
+    .filters { display: flex; gap: 6px; }
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 7px;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: #93c5fd; color: #1d4ed8; }
+    .filter-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .filter-btn.activist.active { background: #ea580c; border-color: #ea580c; }
+
+    /* Download */
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      background: #16a34a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    .dl-btn:hover { background: #15803d; }
+
+    /* Table */
+    .table-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      background: #1e293b;
+      color: #e2e8f0;
+      text-align: left;
+      padding: 11px 14px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    tbody tr { border-bottom: 1px solid #f1f5f9; transition: opacity 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr.hidden { display: none; }
+
+    td { padding: 11px 14px; font-size: 0.88rem; vertical-align: middle; }
+
+    /* Row colours */
+    tr.row-13d  { background: #fff7ed; }
+    tr.row-13d:hover { background: #ffedd5; }
+    tr.row-13g  { background: #fff; }
+    tr.row-13g:hover { background: #f8fafc; }
+    tr.row-13f  { background: #f8fafc; }
+    tr.row-13f:hover { background: #f1f5f9; }
+
+    .type-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .badge-13d { background: #fed7aa; color: #9a3412; }
+    .badge-13g { background: #e0f2fe; color: #0369a1; }
+    .badge-13f { background: #f1f5f9; color: #475569; }
+
+    .holder-name { font-weight: 600; color: #1e293b; }
+    .pct { font-weight: 700; color: #0f172a; }
+    .age-stale { color: #94a3b8; font-style: italic; }
+    .age-fresh { color: #059669; }
+
+    a.edgar-link {
+      color: #2563eb;
+      font-size: 0.78rem;
+      text-decoration: none;
+    }
+    a.edgar-link:hover { text-decoration: underline; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-link active">Holdings Scraper</a>
+  <a href="/vic" class="nav-link">VIC Universe</a>
+  <a href="/sumzero" class="nav-link soon">SumZero</a>
+  <a href="/seekingalpha" class="nav-link soon">Seeking Alpha</a>
+  <a href="/microcapclub" class="nav-link soon">Microcap Club</a>
+</nav>
+
+<div class="page">
+  <header>
+    <h1>Holdings Scraper</h1>
+    <p>Pull 13F + 13D/13G filings for any US-listed company</p>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <div class="input-row">
+      <input id="ticker" type="text" placeholder="Enter ticker — e.g. VRA" maxlength="7" autocomplete="off" autofocus>
+      <button id="scrapeBtn" onclick="startScrape()">Scrape</button>
+    </div>
+    <p class="hint">Scrapes 13D/13G activist filers + 13F institutional holders from SEC EDGAR. Takes 1–5 min.</p>
+
+    <div id="logWrap">
+      <div id="logLabel">Live output</div>
+      <div id="log"></div>
+    </div>
+    <div id="errorBox"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection">
+    <div class="results-header">
+      <div>
+        <span class="results-title" id="resultsTitle"></span>
+        <span class="results-count" id="resultsCount"></span>
+      </div>
+      <div class="top-row">
+        <div class="filters">
+          <button class="filter-btn activist active" data-filter="13d"  onclick="setFilter('13d')">13D — Activists</button>
+          <button class="filter-btn"          data-filter="13g"  onclick="setFilter('13g')">13G — Passive</button>
+          <button class="filter-btn"          data-filter="13f"  onclick="setFilter('13f')">13F — Institutional</button>
+          <button class="filter-btn"          data-filter="all"  onclick="setFilter('all')">All</button>
+        </div>
+        <a id="dlBtn" class="dl-btn" href="#">⬇ Download Excel</a>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Holder</th>
+            <th>Type</th>
+            <th>Ownership&nbsp;%</th>
+            <th>Shares</th>
+            <th>Filed</th>
+            <th>Age</th>
+            <th>EDGAR</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">No results for this filter.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tickerEl   = document.getElementById('ticker');
+  const btn        = document.getElementById('scrapeBtn');
+  const logWrap    = document.getElementById('logWrap');
+  const logEl      = document.getElementById('log');
+  const errorBox   = document.getElementById('errorBox');
+  const resultsEl  = document.getElementById('resultsSection');
+  const bodyEl     = document.getElementById('resultsBody');
+  const emptyEl    = document.getElementById('emptyState');
+  const countEl    = document.getElementById('resultsCount');
+  const titleEl    = document.getElementById('resultsTitle');
+  const dlBtn      = document.getElementById('dlBtn');
+
+  let currentFilter = '13d';
+  let allRows = [];
+  let currentJobId = null;
+
+  tickerEl.addEventListener('keydown', e => { if (e.key === 'Enter') startScrape(); });
+
+  // Pre-fill ticker from URL param (e.g. /?ticker=VRA from VIC page)
+  const urlTicker = new URLSearchParams(window.location.search).get('ticker');
+  if (urlTicker) { tickerEl.value = urlTicker; startScrape(); }
+
+  function appendLog(msg, cls) {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = msg + '\n';
+    logEl.appendChild(span);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function resetUI() {
+    logEl.innerHTML = '';
+    logWrap.style.display = 'none';
+    errorBox.style.display = 'none';
+    resultsEl.style.display = 'none';
+    bodyEl.innerHTML = '';
+    allRows = [];
+  }
+
+  function setBtn(loading) {
+    btn.disabled = loading;
+    btn.innerHTML = loading ? '<div class="spinner"></div>Scraping…' : 'Scrape';
+  }
+
+  function startScrape() {
+    const ticker = tickerEl.value.trim().toUpperCase();
+    if (!ticker) { tickerEl.focus(); return; }
+
+    resetUI();
+    setBtn(true);
+    logWrap.style.display = 'block';
+    appendLog(`Starting scrape for ${ticker}…`, 'sep');
+
+    fetch('/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'ticker=' + encodeURIComponent(ticker),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { showError(data.error); return; }
+      currentJobId = data.job_id;
+      listenStream(data.job_id);
+    })
+    .catch(err => showError('Could not reach server: ' + err));
+  }
+
+  function listenStream(jobId) {
+    const es = new EventSource('/stream/' + jobId);
+    es.onmessage = function(e) {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'log') {
+        const cls = msg.message.includes('ERROR') ? 'err'
+                  : msg.message.startsWith('===')  ? 'sep'
+                  : msg.message.startsWith('Saved') ? 'done' : null;
+        appendLog(msg.message, cls);
+      } else if (msg.type === 'done') {
+        es.close();
+        dlBtn.href = '/download/' + msg.file;
+        loadResults(jobId);
+      } else if (msg.type === 'error') {
+        es.close();
+        showError(msg.message);
+      }
+    };
+    es.onerror = function() { es.close(); showError('Stream lost. Scrape may still have completed.'); };
+  }
+
+  function loadResults(jobId) {
+    fetch('/results/' + jobId)
+      .then(r => {
+        if (!r.ok) throw new Error(`Server returned ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (data.error) { showError('Results error: ' + data.error); setBtn(false); return; }
+        renderResults(data.ticker, data.holders);
+        setBtn(false);
+      })
+      .catch(err => { showError('Could not load results: ' + err); setBtn(false); });
+  }
+
+  function typeClass(type) {
+    const t = (type || '').toUpperCase();
+    if (t.includes('13D')) return '13d';
+    if (t.includes('13G')) return '13g';
+    return '13f';
+  }
+
+  function badgeClass(type) {
+    const t = typeClass(type);
+    return t === '13d' ? 'badge-13d' : t === '13g' ? 'badge-13g' : 'badge-13f';
+  }
+
+  function ageClass(age) {
+    if (!age) return '';
+    if (age.includes('mo') && parseInt(age) <= 12) return 'age-fresh';
+    if (age.includes('yr') && parseFloat(age) <= 1) return 'age-fresh';
+    return 'age-stale';
+  }
+
+  function renderResults(ticker, holders) {
+    allRows = holders;
+    titleEl.textContent = ticker + ' — Holders';
+    resultsEl.style.display = 'block';
+    applyFilter();
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === f);
+    });
+    applyFilter();
+  }
+
+  function applyFilter() {
+    bodyEl.innerHTML = '';
+    const f = currentFilter;
+    let visible = 0;
+
+    allRows.forEach(h => {
+      const tc = typeClass(h['Filing Type'] || '');
+      if (f !== 'all' && tc !== f) return;
+
+      visible++;
+      const tr = document.createElement('tr');
+      tr.className = 'row-' + tc;
+
+      const pct    = h['Ownership %'] || '';
+      const shares = h['Shares Held'] ? Number(h['Shares Held']).toLocaleString() + ' sh' : '';
+      const age    = h['Filing Age'] || '';
+      const link   = h['EDGAR Link'] || '';
+
+      tr.innerHTML = `
+        <td class="holder-name">${h['Holder Name'] || ''}</td>
+        <td><span class="type-badge ${badgeClass(h['Filing Type'])}">${h['Filing Type'] || ''}</span></td>
+        <td class="pct">${pct}</td>
+        <td>${shares}</td>
+        <td>${h['Filing Date'] || ''}</td>
+        <td class="${ageClass(age)}">${age}</td>
+        <td>${link ? `<a class="edgar-link" href="${link}" target="_blank" rel="noopener">View →</a>` : ''}</td>
+      `;
+      bodyEl.appendChild(tr);
+    });
+
+    const total13d = allRows.filter(h => typeClass(h['Filing Type']) === '13d').length;
+    const total13g = allRows.filter(h => typeClass(h['Filing Type']) === '13g').length;
+    const total13f = allRows.filter(h => typeClass(h['Filing Type']) === '13f').length;
+    countEl.textContent = ` · ${total13d} activist · ${total13g} passive · ${total13f} institutional`;
+
+    emptyEl.style.display = visible === 0 ? 'block' : 'none';
+  }
+
+  function showError(msg) {
+    errorBox.textContent = '⚠ ' + msg;
+    errorBox.style.display = 'block';
+    setBtn(false);
+  }
+</script>
+</body>
+</html>

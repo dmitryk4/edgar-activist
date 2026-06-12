@@ -1,0 +1,10 @@
+data/raw/
+data/output/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+CLAUDE.local.md
+*.xlsx
