@@ -203,13 +203,19 @@ def get_13dg_holders(ticker: str, cik: str) -> list[dict]:
 
             obj = filing.obj()
 
-            # Resolve filer name from edgartools if we only had a CIK placeholder
-            if filer_name.startswith("(CIK ") or filer_name == "Unknown":
+            # Resolve filer name — covers empty string (browse hits), CIK placeholder, Unknown
+            if not filer_name or filer_name.startswith("(CIK ") or filer_name == "Unknown":
                 persons = getattr(obj, "reporting_persons", None) or [] if obj else []
                 if persons:
                     filer_name = getattr(persons[0], "name", None) or filer_name
-                if filer_name.startswith("(CIK "):
+                if not filer_name or filer_name.startswith("(CIK "):
                     filer_name = filing.company or filer_name
+                # Final fallback: EDGAR company lookup by CIK
+                if (not filer_name or filer_name.startswith("(CIK ")) and filer_cik_int:
+                    try:
+                        filer_name = Company(filer_cik_int).name or filer_name
+                    except Exception:
+                        pass
 
             # 1. Try edgartools structured data (XBRL, Dec 2024+)
             if obj is not None:
