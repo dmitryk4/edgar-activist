@@ -153,6 +153,10 @@ def get_13dg_holders(ticker: str, cik: str) -> list[dict]:
     )
     raw += efts
 
+    # Drop filings older than 3 years
+    cutoff = f"{date.today().year - 3}-{date.today().strftime('%m-%d')}"
+    raw = [h for h in raw if h.get("file_date", "") >= cutoff]
+
     # Deduplicate by accession
     seen_acc: set[str] = set()
     unique: list[dict] = []
