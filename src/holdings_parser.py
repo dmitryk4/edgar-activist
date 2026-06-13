@@ -66,7 +66,7 @@ def get_13f_holders(ticker: str, cik: str) -> list[dict]:
         (word1,      None),
     ]
 
-    hits = _multi_pass_search(queries, "13F-HR", max_per_query=200)
+    hits = _multi_pass_search(queries, "13F-HR", max_per_query=400)
 
     if not hits:
         print(f"[{ticker}] No 13F results.")

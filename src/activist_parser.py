@@ -51,7 +51,7 @@ def _edgar_browse_13dg(cik: str) -> list[dict]:
     url = (
         "https://www.sec.gov/cgi-bin/browse-edgar"
         f"?action=getcompany&CIK={cik}&type=SC+13"
-        "&dateb=&owner=include&count=100&output=atom"
+        "&dateb=&owner=include&count=400&output=atom"
     )
     try:
         xml_text = _get(url, f"browse13dg_{cik}")
@@ -143,16 +143,15 @@ def get_13dg_holders(ticker: str, cik: str) -> list[dict]:
     raw = _edgar_browse_13dg(cik)
 
     # --- Passes 2-4: EFTS full-text (catches filers using different name variants) ---
-    raw += search_efts(query_name, forms, max_results=200)
-    raw += search_efts(ticker,     forms, max_results=100)
-    raw += search_efts(word1,      forms, max_results=100)
-
-    # Keep only hits where our company is the registered subject
-    raw = [h for h in raw if _hit_is_about_company(h, cik)]
-
-    # Drop filings older than 3 years
-    cutoff = f"{date.today().year - 3}-{date.today().strftime('%m-%d')}"
-    raw = [h for h in raw if h.get("file_date", "") >= cutoff]
+    # Note: EFTS 13D/G hits only carry the *filer's* CIK, not the subject company's CIK,
+    # so _hit_is_about_company incorrectly drops all of them. Trust the text-search
+    # relevance for quoted name/ticker queries instead.
+    efts = (
+        search_efts(query_name, forms, max_results=400) +
+        search_efts(ticker,     forms, max_results=200) +
+        search_efts(word1,      forms, max_results=200)
+    )
+    raw += efts
 
     # Deduplicate by accession
     seen_acc: set[str] = set()
